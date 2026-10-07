@@ -1,0 +1,11 @@
+**
+!package.json
+!server.mjs
+!index.html
+!favicon.svg
+!src/
+!src/**
+!server/
+!server/**
+!styles/
+!styles/**

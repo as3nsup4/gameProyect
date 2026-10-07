@@ -1,0 +1,9 @@
+{
+  "name": "crowd-shift",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A two-player prediction game with local play and private online rooms.",
+  "scripts": { "start": "node server.mjs", "start:lan": "node server.mjs --lan", "test": "node --test" },
+  "engines": { "node": ">=20" }
+}

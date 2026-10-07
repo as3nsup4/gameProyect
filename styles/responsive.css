@@ -1,0 +1,71 @@
+@media (max-width: 1000px) {
+  .page-shell { padding-inline: 28px; }
+  .intro { gap: 32px; grid-template-columns: 1.2fr 1fr; }
+  .intro h1 { font-size: 45px; }
+  .location { padding: 18px; }
+  .location-title { font-size: 25px; }
+  .setup-panel { padding: 22px; }
+  .pill { font-size: 9px; }
+}
+@media (max-width: 760px) {
+  .page-shell { padding-inline: 20px; }
+  .site-header { min-height: 80px; }
+  .mode-label, .edition { display: none; }
+  .brand { font-size: 16px; gap: 9px; }
+  .intro { grid-template-columns: 1fr; padding: 35px 0 42px; gap: 30px; }
+  .intro h1 { font-size: clamp(38px, 8vw, 54px); letter-spacing: -1.8px; margin-top: 18px; }
+  .intro-kicker { font-size: 10px; letter-spacing: 1px; }
+  .intro-description { font-size: 16px; }
+  .game-facts { margin-top: 18px; }
+  .section-heading { align-items: start; flex-direction: column; gap: 10px; }
+  .location-grid { grid-template-columns: 1fr; gap: 16px; }
+  .location { padding: 21px; }
+  .location-top { margin-bottom: 16px; }
+  .location-title { font-size: 29px; }
+  .location-description { margin-bottom: 16px; }
+  .location-hint { font-size: 13px; }
+  .payoffs span { font-size: 12px; }
+  footer { flex-direction: column; gap: 9px; font-size: 9px; }
+  .scoreboard { grid-template-columns: 1fr 1fr; gap: 13px; padding: 15px; margin-top: 20px; }
+  .score-player { gap: 6px; }
+  .score-name { font-size: 12px; }
+  .score-player strong { font-size: 21px; }
+  .score-player small { display: none; }
+  .round-tracker { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 11px; }
+  .round-dots { margin-top: 0; }
+  .interlude { margin: 40px auto 25px; }
+  .interlude h1 { font-size: 39px; letter-spacing: -1.4px; }
+  .interlude .primary { padding-inline: 16px; }
+  .choice-screen { margin-top: 30px; }
+  .choice-heading h1 { font-size: 32px; }
+  .choice-actions { flex-direction: column; align-items: stretch; gap: 16px; }
+  .result-grid { grid-template-columns: 1fr; gap: 15px; }
+  .results { margin: 30px auto; }
+  .results h1 { font-size: 37px; }
+  th, td { padding: 12px; }
+  .dialog-body { padding: 23px; }
+  .rules-scores p { flex-wrap: wrap; }
+  .room-bar { gap: 8px; flex-wrap: wrap; }
+  #opponent-status { flex-basis: 100%; order: 3; }
+  .selectable .location { padding: 17px; }
+  .selectable .location-top { float: right; margin: 0 0 10px 12px; }
+  .selectable .location-number { display: none; }
+  .selectable .location-title { font-size: 26px; }
+  .selectable .location-description, .selectable .location-hint { display: none; }
+  .selectable .payoffs { margin-top: 14px; clear: both; }
+  .choice-actions { position: sticky; bottom: 0; padding: 15px 0; margin-bottom: 0; background: var(--paper); border-top: 1px solid var(--line); z-index: 1; }
+  .choice-actions p { font-size: 13px; }
+  .results-actions .primary { max-width: 100%; overflow-wrap: anywhere; }
+}
+@media (max-width: 380px) {
+  .page-shell { padding-inline: 16px; }
+  .site-header { gap: 10px; }
+  .header-actions .text-button { font-size: 12px; }
+  .header-actions .text-button > span { display: none; }
+  .brand { font-size: 14px; }
+  .setup-panel { padding: 18px; }
+  .mode-picker button { font-size: 11px; }
+  .game-facts { gap: 10px; font-size: 12px; }
+  .game-facts span + span::before { margin-right: 10px; }
+  .scoreboard { column-gap: 10px; padding-inline: 12px; }
+}

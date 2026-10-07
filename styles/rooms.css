@@ -1,0 +1,27 @@
+[hidden] { display: none !important; }
+.header-actions .text-button { white-space: nowrap; }
+.mode-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; margin: 22px 0 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.mode-picker button { min-width: 0; border: 0; border-radius: 6px; padding: 10px 4px; min-height: 44px; font-size: 12px; line-height: 1.3; font-weight: 650; background: transparent; color: var(--muted); }
+.mode-picker button[aria-pressed="true"] { background: var(--ink); color: white; }
+.mode-picker button:hover:not([aria-pressed="true"]) { background: #e5e7dd; color: var(--ink); }
+.room-explainer { margin: 20px 0 6px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.code-input { font-family: ui-monospace, Consolas, monospace; text-transform: uppercase; letter-spacing: 4px; }
+.connection-status, .action-error { margin: 18px 0 0; padding: 13px 17px; border: 1px solid #d0ba74; border-radius: 9px; background: #fff0c5; font-size: 14px; overflow-wrap: anywhere; }
+.action-error { background: #f1ebff; border-color: #cbbfe5; }
+.room-bar { display: flex; align-items: center; gap: 18px; margin-top: 16px; font-size: 11px; color: var(--muted); }
+.room-bar b { font-family: ui-monospace, Consolas, monospace; color: var(--ink); letter-spacing: 2px; font-size: 14px; margin-left: 5px; }
+.room-bar > .text-button { margin-left: auto; flex-shrink: 0; }
+#opponent-status { overflow-wrap: anywhere; }
+.room-bar + .scoreboard { margin-top: 10px; }
+.you-label { display: block; font-size: 9px; letter-spacing: 1px; color: var(--muted); margin-top: 2px; }
+.lobby { max-width: 550px; }
+.interlude .lobby-code { font-family: ui-monospace, Consolas, monospace; font-size: clamp(30px, 7vw, 48px); letter-spacing: 6px; font-weight: 750; color: var(--ink); margin: 24px 0; padding: 15px; border: 1px dashed #949d82; background: #e9f0dc; border-radius: 14px; }
+.lobby label { justify-content: center; }
+.lobby input { text-align: center; font-size: 14px; }
+.lobby .privacy-note { line-height: 1.8; }
+.lobby code { white-space: normal; overflow-wrap: anywhere; }
+.ready-note { margin: -8px 0 24px; text-align: center; color: var(--muted); font-size: 13px; }
+.result-person .pill { margin-left: auto; }
+.rules-scores p { align-items: baseline; }
+.game-facts { flex-wrap: wrap; gap: 8px 20px; }
+.game-facts > span { white-space: nowrap; }
