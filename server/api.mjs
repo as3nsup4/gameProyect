@@ -45,7 +45,7 @@ export function createApi() {
 
   return async (request, response, pathname) => {
     try {
-      if (request.method === 'GET' && pathname === '/api/health') return reply(response, 200, { status: 'ok', version: '1.0.0' });
+      if (request.method === 'GET' && pathname === '/api/health') return reply(response, 200, { status: 'ok', version: '1.1.0' });
       const route = pathname.match(/^\/api\/rooms\/([A-Z2-9]{6})(?:\/(join|actions))?$/);
       const creates = pathname === '/api/rooms';
       if (!route && !creates) throw new RoomError(404, 'Unknown endpoint.');
@@ -65,9 +65,15 @@ export function createApi() {
       if (request.headers['sec-fetch-site'] === 'cross-site') throw new RoomError(403, 'Cross-site requests are not allowed.');
       if (request.method === 'POST') rateLimit(request, creates ? 'create' : 'action');
       const token = request.headers.authorization?.match(/^Bearer ([a-f0-9]{64})$/)?.[1] || '';
-      if (creates) return reply(response, 201, rooms.create((await readBody(request)).name));
+      if (creates) {
+        const body = await readBody(request);
+        return reply(response, 201, rooms.create(body.name, body.entryKey));
+      }
       const [, code, operation] = route;
-      if (operation === 'join') return reply(response, 200, rooms.join(code, (await readBody(request)).name));
+      if (operation === 'join') {
+        const body = await readBody(request);
+        return reply(response, 200, rooms.join(code, body.name, body.entryKey));
+      }
       if (operation === 'actions') return reply(response, 200, rooms.act(code, token, await readBody(request)));
       return reply(response, 200, rooms.read(code, token));
     } catch (error) {

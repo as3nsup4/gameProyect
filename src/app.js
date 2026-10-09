@@ -1,11 +1,13 @@
 import { createGame, beginTurn, lockChoice, revealRound, nextRound, locationById } from './game.js';
 import { shell, setupScreen, handoffScreen, choiceScreen, readyScreen, resultScreen,
   lobbyScreen, lockedScreen, connectingScreen, closedScreen } from './ui.js';
-import { RoomConnection, enterRoom, savedSession, saveSession, invitedCode, setRoomUrl, invitation } from './network.js';
+import { RoomConnection, enterRoom, savedSession, saveSession, invitedCode, setRoomUrl, invitation, pendingEntryDraft } from './network.js';
 
 const app = document.querySelector('#app');
 let invite = invitedCode();
-let setupMode = invite ? 'join' : 'local';
+const pendingDraft = pendingEntryDraft();
+let setupMode = invite ? 'join' : pendingDraft?.mode || 'create';
+const setupDraft = { name: pendingDraft?.name || '', code: invite || pendingDraft?.code || '', playerOne: '', playerTwo: '' };
 let game = null;
 let selected = null;
 let connection = null;
@@ -21,10 +23,11 @@ function screenKey(state) {
 function render({ focusHeading = true } = {}) {
   const openDialogId = app.querySelector('dialog[open]')?.id;
   const historyOpen = app.querySelector('.round-history')?.open;
+  const historyFocused = document.activeElement?.matches('.round-history > summary');
   const focusedAction = document.activeElement?.dataset?.action;
   const focusedChoice = document.activeElement?.dataset?.choice;
   let content;
-  if (!game) content = setupScreen({ mode: setupMode, code: invite });
+  if (!game) content = setupScreen({ ...setupDraft, mode: setupMode });
   else if (game.mode === 'online') {
     switch (game.phase) {
       case 'connecting': content = connectingScreen(); break;
@@ -54,7 +57,7 @@ function render({ focusHeading = true } = {}) {
     window.scrollTo({ top: 0, behavior: 'instant' });
   } else {
     // A friend's ready signal should not steal keyboard focus or clear a selection.
-    const target = focusedChoice ? app.querySelector(`[data-choice="${focusedChoice}"]`) : focusedAction ? app.querySelector(`[data-action="${focusedAction}"]`) : null;
+    const target = focusedChoice ? app.querySelector(`[data-choice="${focusedChoice}"]`) : focusedAction ? app.querySelector(`[data-action="${focusedAction}"]`) : historyFocused ? app.querySelector('.round-history > summary') : null;
     target?.focus({ preventScroll: true });
   }
   app.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('close', () => {
@@ -67,7 +70,7 @@ function updateStatus() {
   const status = document.querySelector('#connection-status');
   const reconnecting = game?.mode === 'online' && game.phase !== 'closed' && !connected;
   status.hidden = !reconnecting;
-  status.textContent = reconnecting ? 'Connection interrupted. Your room stays saved. Reconnecting…' : '';
+  status.textContent = reconnecting ? 'Connection interrupted. Reconnecting to your room…' : '';
   const error = document.querySelector('#action-error');
   error.hidden = !notice;
   error.textContent = notice;
@@ -141,7 +144,8 @@ async function leave() {
   saveSession(null);
   setRoomUrl(null);
   invite = '';
-  setupMode = 'local';
+  setupMode = 'create';
+  setupDraft.code = '';
   game = null;
   selected = null;
   busy = false;
@@ -151,6 +155,12 @@ async function leave() {
   app.querySelector('dialog[open]')?.close();
   render();
 }
+
+app.addEventListener('input', event => {
+  if (!game && event.target.closest('#start-form') && Object.hasOwn(setupDraft, event.target.name)) {
+    setupDraft[event.target.name] = event.target.value;
+  }
+});
 
 app.addEventListener('submit', async event => {
   if (event.target.id !== 'start-form') return;
@@ -172,7 +182,9 @@ app.addEventListener('submit', async event => {
       connectRoom(session, session.state);
     }
   } catch (error) {
-    document.querySelector('#form-error').textContent = error.status === 0 ? 'Cannot reach the room server. Start node server.mjs, then try again.' : error.message;
+    document.querySelector('#form-error').textContent = error.status === 0
+      ? 'The room service is taking a moment. Check your connection, then try again with the same name and code to recover your seat.'
+      : error.message;
   } finally { busy = false; updateControls(); }
 });
 

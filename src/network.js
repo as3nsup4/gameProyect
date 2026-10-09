@@ -1,5 +1,8 @@
 const STORAGE_KEY = 'crowd-shift.room.v1';
+const ENTRY_KEY = 'crowd-shift.entry.v1';
 const CODE_PATTERN = /^[A-Z2-9]{6}$/;
+const TOKEN_PATTERN = /^[a-f0-9]{64}$/;
+let pendingEntry = null;
 
 export class NetworkError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -18,12 +21,12 @@ async function request(path, { token, body, signal } = {}) {
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
     const data = await response.json().catch(() => null);
-    if (!response.ok) throw new NetworkError(response.status, data?.error || 'Rooms need the Crowd Shift Node server.');
+    if (!response.ok) throw new NetworkError(response.status, data?.error || 'Room service is unavailable. Please try again.');
     if (!data) throw new NetworkError(503, 'Room service is unavailable. Please try again.');
     return data;
   } catch (error) {
     if (error instanceof NetworkError) throw error;
-    throw new NetworkError(0, 'Connection interrupted. Your locked move stays saved. Reconnecting…');
+    throw new NetworkError(0, 'Connection interrupted. Reconnecting to check your latest move…');
   } finally {
     clearTimeout(timeout);
     signal?.removeEventListener('abort', abort);
@@ -42,6 +45,29 @@ export function savedSession() {
     const value = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
     return CODE_PATTERN.test(value?.code) && /^[a-f0-9]{64}$/.test(value?.token) ? value : null;
   } catch { return null; }
+}
+
+function readPendingEntry() {
+  if (pendingEntry) return pendingEntry;
+  try {
+    const value = JSON.parse(sessionStorage.getItem(ENTRY_KEY));
+    if (['create', 'join'].includes(value?.mode) && typeof value.name === 'string' &&
+        typeof value.code === 'string' && TOKEN_PATTERN.test(value.entryKey)) pendingEntry = value;
+  } catch { /* In-memory retries still work when browser storage is unavailable. */ }
+  return pendingEntry;
+}
+
+function savePendingEntry(value) {
+  pendingEntry = value;
+  try {
+    if (value) sessionStorage.setItem(ENTRY_KEY, JSON.stringify(value));
+    else sessionStorage.removeItem(ENTRY_KEY);
+  } catch { /* Keep the in-memory copy for the next attempt in this tab. */ }
+}
+
+export function pendingEntryDraft() {
+  const entry = readPendingEntry();
+  return entry ? { mode: entry.mode, name: entry.name, code: entry.code } : null;
 }
 
 export function invitedCode() {
@@ -63,9 +89,29 @@ export function invitation(code) {
 }
 
 export async function enterRoom(mode, name, code) {
-  const normalized = String(code || '').trim().toUpperCase();
+  if (!['create', 'join'].includes(mode)) throw new NetworkError(400, 'Choose Create room or Join room.');
+  const normalized = mode === 'create' ? '' : String(code || '').trim().toUpperCase();
   if (mode === 'join' && !CODE_PATTERN.test(normalized)) throw new NetworkError(400, 'Enter the six-character room code.');
-  return request(mode === 'create' ? '/api/rooms' : `/api/rooms/${normalized}/join`, { body: { name } });
+  const cleanName = String(name || '').trim().slice(0, 20);
+  let entry = readPendingEntry();
+  // Keep this secret across retries: a lost response must not strand a claimed seat.
+  if (!entry || entry.mode !== mode || entry.name !== cleanName || entry.code !== normalized) {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    entry = { mode, name: cleanName, code: normalized,
+      entryKey: Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('') };
+    savePendingEntry(entry);
+  }
+  try {
+    const session = await request(mode === 'create' ? '/api/rooms' : `/api/rooms/${normalized}/join`,
+      { body: { name: cleanName, entryKey: entry.entryKey } });
+    saveSession(session);
+    savePendingEntry(null);
+    return session;
+  } catch (error) {
+    // Network failures, server failures and rate limits may succeed on a later retry.
+    if (error.status >= 400 && error.status < 500 && error.status !== 429) savePendingEntry(null);
+    throw error;
+  }
 }
 
 // Short polling keeps this dependency-free and works behind ordinary HTTP proxies.

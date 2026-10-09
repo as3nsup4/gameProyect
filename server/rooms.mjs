@@ -16,6 +16,13 @@ function nameFor(value, index) {
   return value.trim().slice(0, 20) || `Player ${index + 1}`;
 }
 
+function validateEntryKey(key) {
+  // Optional for clients that loaded the previous release before a deployment.
+  if (key !== undefined && (typeof key !== 'string' || !/^[a-f0-9]{64}$/.test(key))) {
+    throw new RoomError(400, 'Invalid room entry request. Reload and try again.');
+  }
+}
+
 function onlineGame(names) {
   return { ...createGame(names), phase: 'choose', activePlayer: null };
 }
@@ -64,31 +71,46 @@ export function createRoomStore() {
     };
   }
 
-  function seat(name) { return { name, token: randomBytes(32).toString('hex'), seen: Date.now() }; }
+  function seat(name, entryKey) { return { name, entryKey, token: randomBytes(32).toString('hex'), seen: Date.now() }; }
   function credentials(room, index) { return { code: room.code, token: room.seats[index].token, state: snapshot(room, index) }; }
 
+  function recoverEntry(room, index, name) {
+    if (room.closed) throw new RoomError(410, 'This room has closed. Create a new room.');
+    if (room.seats[index].name !== name) throw new RoomError(409, 'This entry belongs to a different player name.');
+    member(room, room.seats[index].token);
+    return credentials(room, index);
+  }
+
   return {
-    create(name) {
+    create(name, entryKey) {
+      validateEntryKey(entryKey);
+      const clean = nameFor(name, 0);
       prune();
+      if (entryKey) {
+        const existing = [...rooms.values()].find(room => room.seats[0].entryKey === entryKey);
+        if (existing) return recoverEntry(existing, 0, clean);
+      }
       if (rooms.size >= MAX_ROOMS) throw new RoomError(503, 'All tables are busy. Please try again later.');
       let code;
       do { code = Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)]).join(''); }
       while (rooms.has(code));
-      const room = { code, seats: [seat(nameFor(name, 0))], game: null, ready: [false, false],
+      const room = { code, seats: [seat(clean, entryKey)], game: null, ready: [false, false],
         match: 1, revision: 1, touched: Date.now(), closed: '' };
       rooms.set(code, room);
       return credentials(room, 0);
     },
 
-    join(code, name) {
+    join(code, name, entryKey) {
+      validateEntryKey(entryKey);
       const room = find(code);
       if (room.closed) throw new RoomError(410, 'This room has closed. Create a new room.');
-      if (room.seats.length === 2) throw new RoomError(409, 'This room already has two players.');
       const clean = nameFor(name, 1);
+      if (entryKey && room.seats[1]?.entryKey === entryKey) return recoverEntry(room, 1, clean);
+      if (room.seats.length === 2) throw new RoomError(409, 'This room already has two players.');
       if (room.seats[0].name.toLocaleLowerCase() === clean.toLocaleLowerCase()) {
         throw new RoomError(400, 'Choose a different name from the other player.');
       }
-      room.seats.push(seat(clean));
+      room.seats.push(seat(clean, entryKey));
       room.game = onlineGame(room.seats.map(player => player.name));
       room.touched = Date.now();
       room.revision++;

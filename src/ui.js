@@ -33,7 +33,7 @@ export function shell(content, game) {
   const online = game?.mode === 'online';
   const hasScores = game?.players?.length === 2 && !['closed', 'connecting'].includes(game.phase);
   return `<div class="page-shell"><header class="site-header">
-    <a class="brand" href="/" aria-label="Crowd Shift home"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>CROWD SHIFT<span class="edition"> / 1.0</span></a>
+    <a class="brand" href="/" aria-label="Crowd Shift home"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>CROWD SHIFT<span class="edition"> / 1.1</span></a>
     <div class="header-actions"><span class="mode-label">${online ? 'ROOM PLAY' : 'THE SOCIAL DUEL'}</span><button class="text-button" data-action="rules">How to play <span aria-hidden="true">?</span></button></div></header>
     <p id="connection-status" class="connection-status" role="status" hidden></p>
     <p id="action-error" class="action-error" role="alert" hidden></p>
@@ -47,16 +47,16 @@ export function shell(content, game) {
     <dialog id="exit-dialog" aria-labelledby="exit-title"><div class="dialog-body"><h2 id="exit-title">Leave this game?</h2><p>${online ? 'Leaving closes the room for both players.' : 'Your current scores and round will be lost.'}</p><div class="dialog-actions"><button class="secondary" data-action="close-exit">Keep playing</button><button class="primary" data-action="exit">Leave game</button></div></div></dialog>`;
 }
 
-export function setupScreen({ mode = 'local', code = '' } = {}) {
+export function setupScreen({ mode = 'create', code = '', name = '', playerOne = '', playerTwo = '' } = {}) {
   const local = mode === 'local';
-  const fields = local ? `<label for="player-one"><span class="player-dot player-0"></span>Player one</label><input id="player-one" name="playerOne" maxlength="20" placeholder="Player 1" autocomplete="off" spellcheck="false">
-    <label for="player-two"><span class="player-dot player-1"></span>Player two</label><input id="player-two" name="playerTwo" maxlength="20" placeholder="Player 2" autocomplete="off" spellcheck="false">`
-    : `<label for="your-name">Your name</label><input id="your-name" name="name" maxlength="20" placeholder="${mode === 'create' ? 'Player 1' : 'Player 2'}" autocomplete="off" spellcheck="false">
+  const fields = local ? `<label for="player-one"><span class="player-dot player-0"></span>Player one</label><input id="player-one" name="playerOne" maxlength="20" placeholder="Player 1" value="${escapeHtml(playerOne)}" autocomplete="off" spellcheck="false">
+    <label for="player-two"><span class="player-dot player-1"></span>Player two</label><input id="player-two" name="playerTwo" maxlength="20" placeholder="Player 2" value="${escapeHtml(playerTwo)}" autocomplete="off" spellcheck="false">`
+    : `<label for="your-name">Your name</label><input id="your-name" name="name" maxlength="20" placeholder="${mode === 'create' ? 'Player 1' : 'Player 2'}" value="${escapeHtml(name)}" autocomplete="off" spellcheck="false">
     ${mode === 'join' ? `<label for="room-code">Room code</label><input id="room-code" name="code" class="code-input" maxlength="6" minlength="6" required placeholder="ABC123" value="${escapeHtml(code)}" autocomplete="off" autocapitalize="characters" spellcheck="false">` : '<p class="room-explainer">Create a private table, then share its six-character code with a friend.</p>'}`;
   return `<section class="intro"><div class="intro-copy"><p class="eyebrow intro-kicker"><span class="tiny-cross" aria-hidden="true">✳</span> A TWO-PLAYER GAME OF SECOND GUESSES</p>
     <h1>Read the room.<br><span>Make your move.</span></h1><p class="intro-description">Three destinations. Every move has a counter.<br>Where do you think they’re going?</p><div class="game-facts"><span>2 players</span><span>~3 minutes</span><span>5 rounds</span></div></div>
     <section class="setup-panel" aria-labelledby="setup-title"><div class="panel-title"><h2 id="setup-title">Bring a friend.</h2><span class="pill">NO SIGN-UP</span></div>
-    <div class="mode-picker" role="group" aria-label="How do you want to play?">${[['local', 'Same device'], ['create', 'Create room'], ['join', 'Join room']].map(([id, label]) => `<button type="button" data-mode="${id}" aria-pressed="${mode === id}">${label}</button>`).join('')}</div>
+    <div class="mode-picker" role="group" aria-label="How do you want to play?">${[['create', 'Create room'], ['join', 'Join room'], ['local', 'Same device']].map(([id, label]) => `<button type="button" data-mode="${id}" aria-pressed="${mode === id}">${label}</button>`).join('')}</div>
     <p class="muted">${local ? 'Two people, one screen. Take turns in secret.' : mode === 'create' ? 'Two screens. One shared match.' : 'Enter the code your friend shared.'}</p>
     <form id="start-form">${fields}<p id="form-error" class="form-error" role="alert"></p><button class="primary full start-button" type="submit">${local ? 'Let’s play' : mode === 'create' ? 'Create room' : 'Join room'} <span aria-hidden="true">↗</span></button><p class="setup-note">${local ? 'Pass, predict, reveal. No peeking.' : 'Both players open the same website.'}</p></form></section></section>
     <section class="locations-section" aria-labelledby="locations-title"><div class="section-heading"><div><p class="eyebrow">LEARN THE LOOP</p><h2 id="locations-title">One beats one. One beats you.</h2></div><p>Win +3 · Match +1 each · Lose +0</p></div><div class="location-grid">${locationCards()}</div><p class="bottom-tip">Rooftop beats Dancefloor. Dancefloor beats Café. Café beats Rooftop. Keep them guessing.</p></section>`;
@@ -94,7 +94,7 @@ export function handoffScreen(game) {
 
 export function choiceScreen(game, selected = null) {
   const you = game.mode === 'online' ? game.you : game.activePlayer;
-  return `<section class="choice-screen"><div class="section-heading choice-heading"><div><p class="eyebrow">${escapeHtml(game.players[you].name)}’S SECRET MOVE</p><h1 tabindex="-1" data-focus>Where are you headed?</h1></div><p>Win +3 · Match +1 each · Lose +0</p></div><div class="location-grid selectable" role="group" aria-label="Choose a location">${locationCards({ selectable: true, selected })}</div><div class="choice-actions"><p id="selection-status" role="status">${selected ? `${locationById(selected).name} selected. You can still change your mind.` : 'Your move. Select a destination.'}</p><button class="primary" data-action="lock" ${selected ? '' : 'disabled'}>${icon('lock')} Lock my choice</button></div></section>${leaveButton()}`;
+  return `<section class="choice-screen"><div class="section-heading choice-heading"><div><p class="eyebrow">${escapeHtml(game.players[you].name)}’S SECRET MOVE</p><h1 tabindex="-1" data-focus>Where are you headed?</h1></div><p>Win +3 · Match +1 each · Lose +0</p></div>${game.history.length ? roundHistory(game, { choosing: true }) : '<p class="first-move-note">Pick freely this round. Watch their revealed moves for patterns in the next.</p>'}<div class="location-grid selectable" role="group" aria-label="Choose a location">${locationCards({ selectable: true, selected })}</div><div class="choice-actions"><p id="selection-status" role="status">${selected ? `${locationById(selected).name} selected. You can still change your mind.` : 'Your move. Select a destination.'}</p><button class="primary" data-action="lock" ${selected ? '' : 'disabled'}>${icon('lock')} Lock my choice</button></div></section>${leaveButton()}`;
 }
 
 export function lockedScreen(game) {
@@ -112,7 +112,10 @@ export function resultScreen(game) {
   const tiedRound = last.choices[0] === last.choices[1];
   const roundWinner = last.points[0] > last.points[1] ? 0 : 1;
   const title = finished ? winner === null ? 'It’s a draw.' : `${escapeHtml(game.players[winner].name)} wins.` : tiedRound ? 'Same wavelength.' : `${escapeHtml(game.players[roundWinner].name)} read the room.`;
-  const explanation = tiedRound ? `You both chose ${locationById(last.choices[0]).name}. One point each.` : `${locationById(last.choices[roundWinner]).name} beats ${locationById(last.choices[1 - roundWinner]).name}. Three points for the winning move.`;
+  const roundExplanation = tiedRound ? `You both chose ${locationById(last.choices[0]).name}. One point each.` : `${locationById(last.choices[roundWinner]).name} beats ${locationById(last.choices[1 - roundWinner]).name}. Three points for the winning move.`;
+  const explanation = finished
+    ? `Final score: ${game.players.map(p => `${escapeHtml(p.name)} ${p.score}`).join(' · ')}.<br>Round ${game.round}: ${roundExplanation}`
+    : roundExplanation;
   const online = game.mode === 'online';
   const waiting = online && game.ready[game.you];
   const nextLabel = waiting ? `Waiting for ${escapeHtml(game.players[1 - game.you].name)}…` : finished ? 'Play again' : `Next round · ${game.round + 1} / ${ROUND_COUNT}`;
@@ -122,7 +125,14 @@ export function resultScreen(game) {
       return `<article class="result-card ${location.id}"><div class="result-person"><span class="player-token player-${i}">${i + 1}</span><b>${escapeHtml(p.name)}</b>${finished && winner !== null ? `<span class="pill ${winner === i ? 'winner-pill' : ''}">${winner === i ? 'WINNER' : '2ND PLACE'}</span>` : ''}</div><div class="result-location">${icon(location.id)}<h2>${location.name}</h2></div><div class="points-line"><strong>+${last.points[i]}</strong><span>${tiedRound ? 'matched' : roundWinner === i ? 'won' : 'lost'} this round</span><b>${p.score} <small>TOTAL</small></b></div></article>`;
     }).join('')}</div><div class="results-actions"><button class="primary" data-action="${finished ? 'rematch' : 'next'}" ${waiting ? 'disabled' : ''}>${nextLabel}</button>${finished && !online ? '<button class="text-button" data-action="exit">Change players</button>' : ''}</div>
     ${online ? '<p class="ready-note">Both players choose when to continue. Take a moment to read the round.</p>' : ''}
-    <details class="round-history" ${finished ? 'open' : ''}><summary>Round history <span>${game.history.length} / ${ROUND_COUNT}</span></summary><div class="table-scroll"><table><caption class="sr-only">Destinations and points awarded each round</caption><thead><tr><th>Round</th>${game.players.map(p => `<th>${escapeHtml(p.name)}</th>`).join('')}</tr></thead><tbody>${game.history.map(round => `<tr><th>${round.round}</th>${round.choices.map((id, i) => `<td>${locationById(id).name} <b>+${round.points[i]}</b></td>`).join('')}</tr>`).join('')}</tbody></table></div></details></section>${finished && !online ? '' : leaveButton()}`;
+    ${roundHistory(game, { open: finished })}</section>${finished && !online ? '' : leaveButton()}`;
+}
+
+function roundHistory(game, { open = false, choosing = false } = {}) {
+  // Only completed rounds belong here; current choices stay private until reveal.
+  return `<details class="round-history ${choosing ? 'choice-history' : ''}" ${open ? 'open' : ''}><summary>${choosing ? 'Read their pattern · Past moves' : 'Round history'} <span>${game.history.length} / ${ROUND_COUNT}</span></summary>
+    ${choosing ? '<p class="history-note">Revealed rounds only. Will they repeat, or switch?</p>' : ''}
+    <div class="table-scroll"><table><caption class="sr-only">Revealed destinations and points awarded each round</caption><thead><tr><th scope="col">Round</th>${game.players.map(p => `<th scope="col">${escapeHtml(p.name)}</th>`).join('')}</tr></thead><tbody>${game.history.map(round => `<tr><th scope="row">${round.round}</th>${round.choices.map((id, i) => `<td>${locationById(id).name} <b>+${round.points[i]}</b></td>`).join('')}</tr>`).join('')}</tbody></table></div></details>`;
 }
 
 function leaveButton() { return '<div class="leave-row"><button class="text-button muted" data-action="confirm-exit">Leave game</button></div>'; }

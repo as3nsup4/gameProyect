@@ -1,6 +1,6 @@
 {
   "name": "crowd-shift",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "A two-player prediction game with local play and private online rooms.",

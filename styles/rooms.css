@@ -25,3 +25,11 @@
 .rules-scores p { align-items: baseline; }
 .game-facts { flex-wrap: wrap; gap: 8px 20px; }
 .game-facts > span { white-space: nowrap; }
+.choice-history { margin: 0 0 24px; }
+.choice-history summary { display: flex; align-items: baseline; gap: 12px; }
+.choice-history summary::before { content: '+'; font-size: 18px; }
+.choice-history[open] summary::before { content: '−'; }
+.choice-history summary span { margin-left: auto; white-space: nowrap; }
+.history-note, .first-move-note { color: var(--muted); font-size: 13px; }
+.history-note { padding: 0 20px 16px; }
+.first-move-note { margin: -6px 0 22px; }
